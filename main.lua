@@ -1,9 +1,11 @@
+-- services
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local remote = ReplicatedStorage.Packages.Packets.PacketModule.RemoteEvent
 
+-- ui
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Window = Rayfield:CreateWindow({
@@ -15,13 +17,15 @@ local Window = Rayfield:CreateWindow({
 
 local Main = Window:CreateTab("Main", 4483362458)
 
+-- settings
 local plot = 1
 local maxPlatform = 100
 local autoBuy = false
 local autoUpgrade = false
 local showLogs = false
 local upgradeDelay = 0.12
-local collectDelay = 0.25
+
+-- utility
 
 local function getCharacter()
 	local char = player.Character
@@ -47,6 +51,7 @@ local function getFolder()
 	return platforms:FindFirstChild("Platforms")
 end
 
+-- money formatter
 local function toNumber(text)
 	text = text:gsub("%$", "")
 
@@ -60,6 +65,7 @@ local function toNumber(text)
 	return tonumber(text) and tonumber(text) * mult or math.huge
 end
 
+-- upgrade fire
 local function upgradePlatform(index)
 	local packet = "\022" ..
 		string.char(4 + index) ..
@@ -67,6 +73,8 @@ local function upgradePlatform(index)
 
 	remote:FireServer(buffer.fromstring(packet))
 end
+
+-- plot controls
 
 Main:CreateSection("Select Your Plot (1st plot is far left numbered going right) 1  →  5")
 
@@ -90,6 +98,8 @@ Main:CreateSlider({
 	end
 })
 
+-- auto collect
+
 Main:CreateSection("Auto Collect Money")
 
 Main:CreateToggle({
@@ -101,7 +111,6 @@ Main:CreateToggle({
 		if autoBuy then
 			task.spawn(function()
 				while autoBuy do
-					
 					local folder = getFolder()
 					if not folder then
 						task.wait(0.5)
@@ -127,10 +136,9 @@ Main:CreateToggle({
 								elseif btn:IsA("BasePart") then
 									character:PivotTo(btn.CFrame)
 								end
+								task.wait(0.12)
 							end
 						end
-
-						task.wait(collectDelay)
 					end
 
 					task.wait(0.4)
@@ -140,15 +148,7 @@ Main:CreateToggle({
 	end
 })
 
-Main:CreateSlider({
-	Name = "Slider (Increase if high ping)",
-	Range = {0.2, 1},
-	Increment = 0.05,
-	CurrentValue = 0.25,
-	Callback = function(v)
-		collectDelay = v
-	end
-})
+-- auto upgrade
 
 Main:CreateSection("Auto Upgrade")
 
@@ -161,7 +161,6 @@ Main:CreateToggle({
 		if autoUpgrade then
 			task.spawn(function()
 				while autoUpgrade do
-					
 					local folder = getFolder()
 					if not folder then
 						task.wait(0.5)
