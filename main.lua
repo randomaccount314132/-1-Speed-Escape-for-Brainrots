@@ -76,10 +76,10 @@ Main:CreateSlider({
 })
 
 -- auto buy
-Main:CreateSection("Auto Buy")
+Main:CreateSection("Auto Collect Money")
 
 Main:CreateToggle({
-	Name = "Auto Buy Upgrades",
+	Name = "Auto Collect Money",
 
 	CurrentValue = false,
 	Callback = function(v)
