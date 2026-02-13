@@ -66,7 +66,7 @@ Main:CreateSlider({
 })
 
 Main:CreateSlider({
-	Name = "Max Platform",
+	Name = "Max Platform Number",
 	Range = {1,100},
 	Increment = 1,
 	CurrentValue = 100,
