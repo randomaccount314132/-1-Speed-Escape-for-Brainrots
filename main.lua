@@ -51,7 +51,8 @@ local function upgradePlatform(index)
 end
 
 -- plot controls
-Main:CreateSection("Plot")
+Main:CreateSection("Select Plot (Left / Right Arrow To Change)")
+
 
 Main:CreateSlider({
 	Name = "Plot",
@@ -77,7 +78,8 @@ Main:CreateSlider({
 Main:CreateSection("Auto Buy")
 
 Main:CreateToggle({
-	Name = "Auto Buy Platforms",
+	Name = "Auto Buy Upgrades",
+
 	CurrentValue = false,
 	Callback = function(v)
 		autoBuy = v
