@@ -1,0 +1,3 @@
+# Ignore conversation history file
+CONVERSATION_HISTORY.md
+.conversation_key
