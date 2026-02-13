@@ -3,8 +3,6 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-
 local remote = ReplicatedStorage.Packages.Packets.PacketModule.RemoteEvent
 
 -- ui
@@ -26,6 +24,34 @@ local autoBuy = false
 local autoUpgrade = false
 local showLogs = false
 local upgradeDelay = 0.12
+
+--==================================================
+-- utility
+--==================================================
+
+local function getCharacter()
+	local char = player.Character
+	if not char or not char.Parent then
+		char = player.CharacterAdded:Wait()
+	end
+	return char
+end
+
+local function getFolder()
+	local map = workspace:FindFirstChild("Map")
+	if not map then return nil end
+	
+	local plots = map:FindFirstChild("Plots")
+	if not plots then return nil end
+	
+	local currentPlot = plots:FindFirstChild("Plot"..plot)
+	if not currentPlot then return nil end
+	
+	local platforms = currentPlot:FindFirstChild("Platforms")
+	if not platforms then return nil end
+	
+	return platforms:FindFirstChild("Platforms")
+end
 
 -- money formatter
 local function toNumber(text)
@@ -50,10 +76,11 @@ local function upgradePlatform(index)
 	remote:FireServer(buffer.fromstring(packet))
 end
 
+--==================================================
 -- plot controls
+--==================================================
+
 Main:CreateSection("Select Your Plot (1st plot is far left numbered going right) 1  →  5")
-
-
 
 Main:CreateSlider({
 	Name = "Plot",
@@ -75,12 +102,14 @@ Main:CreateSlider({
 	end
 })
 
--- auto buy
+--==================================================
+-- auto collect (rebirth safe)
+--==================================================
+
 Main:CreateSection("Auto Collect Money")
 
 Main:CreateToggle({
 	Name = "Auto Collect Money",
-
 	CurrentValue = false,
 	Callback = function(v)
 		autoBuy = v
@@ -88,10 +117,19 @@ Main:CreateToggle({
 		if autoBuy then
 			task.spawn(function()
 				while autoBuy do
-					local currentPlot = workspace.Map.Plots:FindFirstChild("Plot"..plot)
-					if not currentPlot then task.wait(1) continue end
+					
+					local folder = getFolder()
+					if not folder then
+						task.wait(0.5)
+						continue
+					end
 
-					local folder = currentPlot.Platforms.Platforms
+					local character = getCharacter()
+					local root = character:FindFirstChild("HumanoidRootPart")
+					if not root then
+						task.wait(0.2)
+						continue
+					end
 
 					for i = 1, maxPlatform do
 						if not autoBuy then break end
@@ -105,9 +143,10 @@ Main:CreateToggle({
 								elseif btn:IsA("BasePart") then
 									character:PivotTo(btn.CFrame)
 								end
-								task.wait(0.12)
 							end
 						end
+
+						task.wait(0.1)
 					end
 
 					task.wait(0.4)
@@ -117,7 +156,10 @@ Main:CreateToggle({
 	end
 })
 
--- auto upgrade
+--==================================================
+-- auto upgrade (rebirth safe)
+--==================================================
+
 Main:CreateSection("Auto Upgrade")
 
 Main:CreateToggle({
@@ -129,10 +171,12 @@ Main:CreateToggle({
 		if autoUpgrade then
 			task.spawn(function()
 				while autoUpgrade do
-					local currentPlot = workspace.Map.Plots:FindFirstChild("Plot"..plot)
-					if not currentPlot then task.wait(1) continue end
-
-					local folder = currentPlot.Platforms.Platforms
+					
+					local folder = getFolder()
+					if not folder then
+						task.wait(0.5)
+						continue
+					end
 
 					local cheapestIndex
 					local cheapestCost = math.huge
@@ -204,4 +248,3 @@ Main:CreateToggle({
 		showLogs = v
 	end
 })
-
