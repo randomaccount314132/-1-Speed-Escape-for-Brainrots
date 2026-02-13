@@ -51,7 +51,8 @@ local function upgradePlatform(index)
 end
 
 -- plot controls
-Main:CreateSection("Select Plot (Left / Right Arrow To Change)")
+Main:CreateSection("Select Your Plot (1st plot is far left numbered going right) 1  →  5")
+
 
 
 Main:CreateSlider({
