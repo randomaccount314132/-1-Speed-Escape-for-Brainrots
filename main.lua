@@ -1,32 +1,34 @@
--- services
+--// Services
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local remote = ReplicatedStorage.Packages.Packets.PacketModule.RemoteEvent
 
--- ui
+--// UI
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Window = Rayfield:CreateWindow({
 	Name = "[UPD] +1 Speed Escape for Brainrots!",
 	LoadingTitle = "Brainrots Hub",
 	LoadingSubtitle = "Automation",
-	ConfigurationSaving = { Enabled = false }
+	ConfigurationSaving = {
+		Enabled = false
+	}
 })
 
 local Main = Window:CreateTab("Main", 4483362458)
 
--- settings
+--// Settings
 local plot = 1
 local maxPlatform = 100
 local autoBuy = false
 local autoUpgrade = false
+local autoUpgradeQD = false
 local showLogs = false
 local upgradeDelay = 0.12
 
--- utility
-
+--// Utility
 local function getCharacter()
 	local char = player.Character
 	if not char or not char.Parent then
@@ -38,49 +40,56 @@ end
 local function getFolder()
 	local map = workspace:FindFirstChild("Map")
 	if not map then return nil end
-	
+
 	local plots = map:FindFirstChild("Plots")
 	if not plots then return nil end
-	
-	local currentPlot = plots:FindFirstChild("Plot"..plot)
+
+	local currentPlot = plots:FindFirstChild("Plot" .. plot)
 	if not currentPlot then return nil end
-	
+
 	local platforms = currentPlot:FindFirstChild("Platforms")
 	if not platforms then return nil end
-	
+
 	return platforms:FindFirstChild("Platforms")
 end
 
--- money formatter
+--// Money formatter (supports QD)
 local function toNumber(text)
 	text = text:gsub("%$", "")
 
-	local mult = 1
-	if text:find("K") then mult = 1e3 end
-	if text:find("M") then mult = 1e6 end
-	if text:find("B") then mult = 1e9 end
-	if text:find("T") then mult = 1e12 end
+	local multipliers = {
+		K  = 1e3,
+		M  = 1e6,
+		B  = 1e9,
+		T  = 1e12,
+		QA = 1e15,
+		QD = 1e18
+	}
 
-	text = text:gsub("[KMBT]", "")
+	local mult = 1
+	for suffix, value in pairs(multipliers) do
+		if text:find(suffix) then
+			mult = value
+			text = text:gsub(suffix, "")
+			break
+		end
+	end
+
 	return tonumber(text) and tonumber(text) * mult or math.huge
 end
 
--- upgrade fire
+--// Upgrade fire
 local function upgradePlatform(index)
-	local packet = "\022" ..
-		string.char(4 + index) ..
-		string.char(index)
-
+	local packet = "\022" .. string.char(4 + index) .. string.char(index)
 	remote:FireServer(buffer.fromstring(packet))
 end
 
--- plot controls
-
-Main:CreateSection("Select Your Plot (1st plot is far left numbered going right) 1  →  5")
+--// Plot controls
+Main:CreateSection("Select Your Plot (1 → 5)")
 
 Main:CreateSlider({
 	Name = "Plot",
-	Range = {1,5},
+	Range = {1, 5},
 	Increment = 1,
 	CurrentValue = 1,
 	Callback = function(v)
@@ -90,7 +99,7 @@ Main:CreateSlider({
 
 Main:CreateSlider({
 	Name = "Max Platform Number",
-	Range = {1,100},
+	Range = {1, 100},
 	Increment = 1,
 	CurrentValue = 100,
 	Callback = function(v)
@@ -98,8 +107,7 @@ Main:CreateSlider({
 	end
 })
 
--- auto collect
-
+--// Auto Collect
 Main:CreateSection("Auto Collect Money")
 
 Main:CreateToggle({
@@ -118,16 +126,11 @@ Main:CreateToggle({
 					end
 
 					local character = getCharacter()
-					local root = character:FindFirstChild("HumanoidRootPart")
-					if not root then
-						task.wait(0.2)
-						continue
-					end
 
 					for i = 1, maxPlatform do
 						if not autoBuy then break end
 
-						local platform = folder:FindFirstChild("Platform"..i)
+						local platform = folder:FindFirstChild("Platform" .. i)
 						if platform then
 							local btn = platform:FindFirstChild("Button", true)
 							if btn then
@@ -148,8 +151,7 @@ Main:CreateToggle({
 	end
 })
 
--- auto upgrade
-
+--// Auto Cheapest Upgrade
 Main:CreateSection("Auto Upgrade")
 
 Main:CreateToggle({
@@ -169,51 +171,91 @@ Main:CreateToggle({
 
 					local cheapestIndex
 					local cheapestCost = math.huge
-					local displayCost = ""
 
 					for i = 1, maxPlatform do
-						local platform = folder:FindFirstChild("Platform"..i)
+						local platform = folder:FindFirstChild("Platform" .. i)
 						if platform then
-							local costLabel = platform
-								:FindFirstChild("UpgradeButton")
-								and platform.UpgradeButton
-									:FindFirstChild("UpgradeButtonSurface")
-								and platform.UpgradeButton.UpgradeButtonSurface
-									:FindFirstChild("ImageButton")
-								and platform.UpgradeButton.UpgradeButtonSurface.ImageButton
-									:FindFirstChild("UpgradeCost")
+							local costLabel =
+								platform:FindFirstChild("UpgradeButton") and
+								platform.UpgradeButton:FindFirstChild("UpgradeButtonSurface") and
+								platform.UpgradeButton.UpgradeButtonSurface:FindFirstChild("ImageButton") and
+								platform.UpgradeButton.UpgradeButtonSurface.ImageButton:FindFirstChild("UpgradeCost")
 
-							local locked = platform
-								:FindFirstChild("UpgradeButton")
-								and platform.UpgradeButton
-									:FindFirstChild("UpgradeButtonSurface")
-								and platform.UpgradeButton.UpgradeButtonSurface
-									:FindFirstChild("ImageButton")
-								and platform.UpgradeButton.UpgradeButtonSurface.ImageButton
-									:FindFirstChild("NotAfford")
+							local locked =
+								platform:FindFirstChild("UpgradeButton") and
+								platform.UpgradeButton:FindFirstChild("UpgradeButtonSurface") and
+								platform.UpgradeButton.UpgradeButtonSurface:FindFirstChild("ImageButton") and
+								platform.UpgradeButton.UpgradeButtonSurface.ImageButton:FindFirstChild("NotAfford")
 
 							if costLabel and (not locked or not locked.Visible) then
 								local cost = toNumber(costLabel.Text)
-
 								if cost < cheapestCost then
 									cheapestCost = cost
 									cheapestIndex = i
-									displayCost = costLabel.Text
 								end
 							end
 						end
 					end
 
 					if cheapestIndex then
-						if showLogs then
-							print("Upgrading Platform", cheapestIndex, "| Cost:", displayCost)
-						end
-
 						upgradePlatform(cheapestIndex)
 						task.wait(upgradeDelay)
 					else
 						task.wait(0.5)
 					end
+				end
+			end)
+		end
+	end
+})
+
+--// Auto Upgrade > 1QD
+Main:CreateToggle({
+	Name = "Auto Upgrade > 1QD",
+	CurrentValue = false,
+	Callback = function(v)
+		autoUpgradeQD = v
+
+		if autoUpgradeQD then
+			task.spawn(function()
+				while autoUpgradeQD do
+					local folder = getFolder()
+					if not folder then
+						task.wait(0.5)
+						continue
+					end
+
+					for i = 1, maxPlatform do
+						if not autoUpgradeQD then break end
+
+						local platform = folder:FindFirstChild("Platform" .. i)
+						if platform then
+							local costLabel =
+								platform:FindFirstChild("UpgradeButton") and
+								platform.UpgradeButton:FindFirstChild("UpgradeButtonSurface") and
+								platform.UpgradeButton.UpgradeButtonSurface:FindFirstChild("ImageButton") and
+								platform.UpgradeButton.UpgradeButtonSurface.ImageButton:FindFirstChild("UpgradeCost")
+
+							local locked =
+								platform:FindFirstChild("UpgradeButton") and
+								platform.UpgradeButton:FindFirstChild("UpgradeButtonSurface") and
+								platform.UpgradeButton.UpgradeButtonSurface:FindFirstChild("ImageButton") and
+								platform.UpgradeButton.UpgradeButtonSurface.ImageButton:FindFirstChild("NotAfford")
+
+							if costLabel and (not locked or not locked.Visible) then
+								local cost = toNumber(costLabel.Text)
+								if cost >= 1e18 then
+									if showLogs then
+										print("Upgrading >1QD Platform:", i, "| Cost:", costLabel.Text)
+									end
+									upgradePlatform(i)
+									task.wait(upgradeDelay)
+								end
+							end
+						end
+					end
+
+					task.wait(0.2)
 				end
 			end)
 		end
